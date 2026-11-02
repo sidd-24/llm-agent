@@ -1,42 +1,35 @@
+import os
+
 from langchain_groq import ChatGroq
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain.prompts import PromptTemplate
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate
 from agent.tools import get_tools
 
 
-PROMPT_TEMPLATE = """You are a helpful assistant with access to the following tools:
-
-{tools}
-
-Use the following format strictly:
-
-Question: the input question you must answer
-Thought: think about what to do
-Action: the action to take, must be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-... (repeat Thought/Action/Action Input/Observation as needed)
-Thought: I now know the final answer
-Final Answer: the final answer to the original question
-
-Begin!
-
-Question: {input}
-Thought: {agent_scratchpad}"""
+# The model picks tools through native tool calling. The older text-based
+# ReAct format (Thought / Action / Observation) does not work with current
+# Groq models such as gpt-oss, which return tool calls instead of that text.
+SYSTEM_PROMPT = """You are a helpful assistant with access to tools for web search, Wikipedia and calculations.
+Use a tool whenever the answer depends on current information, facts you are unsure about, or arithmetic.
+You may call several tools in a row. Answer concisely and mention which sources you used."""
 
 
 def build_agent(api_key: str) -> AgentExecutor:
     llm = ChatGroq(
         api_key=api_key,
-        model_name="llama-3.3-70b-versatile",
+        model_name=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
         temperature=0,
     )
 
     tools = get_tools()
 
-    prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", SYSTEM_PROMPT),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ])
 
-    agent = create_react_agent(
+    agent = create_tool_calling_agent(
         llm=llm,
         tools=tools,
         prompt=prompt,

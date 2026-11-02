@@ -1,13 +1,13 @@
 # 🤖 Multi-tool LLM Agent
 
-An autonomous LLM agent that decides which tools to use to answer any question. Built with LangChain's ReAct framework and Groq as the LLM. No paid search API required.
+An autonomous LLM agent that decides which tools to use to answer any question. Built with LangChain's tool-calling agent and Groq as the LLM. No paid search API required.
 
 ## Stack
 
 | Layer | Tool |
 |---|---|
-| LLM | Groq (Llama 3.3 70B) |
-| Agent Framework | LangChain ReAct |
+| LLM | Groq (`openai/gpt-oss-120b`, configurable with `GROQ_MODEL`) |
+| Agent Framework | LangChain tool-calling agent |
 | Web Search | DuckDuckGo (free) |
 | Knowledge Tool | Wikipedia |
 | Math Tool | NumExpr |
@@ -15,7 +15,7 @@ An autonomous LLM agent that decides which tools to use to answer any question. 
 
 ## How it works
 
-The agent follows the ReAct pattern — it reasons and acts in a loop until it finds the final answer:
+The agent reasons and acts in a loop until it has the final answer. The model selects tools through native tool calling, so no text format has to be parsed:
 
 ```
 Question

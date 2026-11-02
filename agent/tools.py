@@ -3,6 +3,10 @@ from duckduckgo_search import DDGS
 import wikipedia
 import numexpr as ne
 
+# Wikipedia rate-limits the library's shared default user agent (HTTP 429),
+# so identify this project as its API policy asks
+wikipedia.set_user_agent("llm-agent/1.0 (https://github.com/sidd-24/llm-agent)")
+
 
 def search_web(query: str) -> str:
     import time
@@ -21,12 +25,14 @@ def search_web(query: str) -> str:
 
 def search_wikipedia(query: str) -> str:
     try:
-        summary = wikipedia.summary(query, sentences=3)
+        summary = wikipedia.summary(query, sentences=5, auto_suggest=False)
         return summary
     except wikipedia.DisambiguationError as e:
         return f"Ambiguous query. Try one of: {e.options[:5]}"
     except wikipedia.PageError:
         return "No Wikipedia page found for this query."
+    except Exception as e:
+        return f"Wikipedia lookup failed: {str(e)}. Try WebSearch instead."
 
 
 def calculate(expression: str) -> str:
